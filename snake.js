@@ -12,7 +12,9 @@ const window_height = window.innerHeight;
 const ctx = canvas.getContext('2d');
 ctx.scale(dpr, dpr);
 const sound_chew = new Audio("chew.wav");
-let cherries = [];
+const background_color = 'rgb(0, 0, 0)';
+const snake_cell_color = 'rgb(0, 255, 0)';
+const cherry_cell_color = 'rgb(255, 0, 0)';
 const max_cherry_num = 1;
 let index = 0;
 const game_delay = 3;
@@ -22,6 +24,8 @@ const max_tail_size = grid_rows * grid_cols + 1;
 const cell_height = window_height / grid_rows,
     cell_width = window_width / grid_cols;
 const cell_size = cell_height < cell_width ? cell_height : cell_width;
+const cell_color = 'rgba(255, 255, 255, 0.1)';
+const snake_spawn_point = [grid_cols / 2, grid_rows / 2];
 
 function gen_int(min, max) {
     min = Math.ceil(min);
@@ -29,8 +33,20 @@ function gen_int(min, max) {
     return Math.floor(Math.random() * (max - min) + min); //The maximum is exclusive and the minimum is inclusive
 }
 
+class Cherry {
+    constructor(x, y, cell_color) {
+        this.x = x;
+        this.y = y;
+        this.cell_color = cell_color;
+    }
+    draw(ctx, cell_size) {
+        ctx.fillStyle = this.cell_color;
+        ctx.fillRect(this.x * cell_size, this.y * cell_size, cell_size, cell_size);
+    }
+}
+
 class Snake {
-    constructor(x, y, tail_max_size) {
+    constructor(x, y, max_tail_size, cell_color, sound_chew) {
         this.start_x = x;
         this.start_y = y;
         this.x = x;
@@ -41,6 +57,9 @@ class Snake {
             [this.x, this.y]
         ];
         this.tail_size = 1;
+        this.max_tail_size = max_tail_size;
+        this.cell_color = cell_color;
+        this.sound_chew = sound_chew;
     }
     move(grid_rows, grid_cols) {
         this.x += this.vx;
@@ -70,10 +89,13 @@ class Snake {
         }
     }
     draw(ctx, cell_size) {
-        ctx.fillStyle = "rgb(0, 255, 0)";
+        ctx.fillStyle = this.cell_color;
         for (let i = 0; i < this.tail.length; ++i) {
             ctx.fillRect(this.tail[i][0] * cell_size, this.tail[i][1] * cell_size, cell_size, cell_size);
         }
+    }
+    chew() {
+        this.sound_chew.play();
     }
     #restart() {
         this.x = this.start_x;
@@ -85,14 +107,75 @@ class Snake {
     }
 }
 
-class Cherry {
-    constructor(x, y) {
-        this.x = x;
-        this.y = y;
+class Game_Field {
+    constructor(rows, cols, cell_size, cell_color, snake, max_cherry_num, cherry_cell_color) {
+        this.rows = rows;
+        this.cols = cols;
+        this.cell_size = cell_size;
+        this.cell_color = cell_color;
+        this.snake = snake;
+        this.cherries = [];
+        this.max_cherry_num = max_cherry_num;
+        this.cherry_cell_color = cherry_cell_color;
     }
-    draw(ctx, cell_size) {
-        ctx.fillStyle = "rgb(255, 0, 0)";
-        ctx.fillRect(this.x * cell_size, this.y * cell_size, cell_size, cell_size);
+    move_snake() {
+        this.snake.move(this.rows, this.cols);
+    }
+    spawn_cherry() {
+        for (let i = 0; i < this.max_cherry_num - this.cherries.length; ++i) {
+            if (this.cherries.length > this.rows * this.cols - this.snake.tail.length) {
+                break;
+            }
+            let temp_x = 0;
+            let temp_y = 0;
+            let pass = false;
+            while (!pass) {
+                pass = true;
+                temp_x = gen_int(0, this.cols);
+                temp_y = gen_int(0, this.rows);
+                for (let j = 0; j < this.snake.tail.length; ++j) {
+                    if (temp_x === this.snake.tail[j][0] && temp_y === this.snake.tail[j][1]) {
+                        pass = false;
+                        break;
+                    }
+                }
+                if (!pass) {
+                    continue;
+                }
+                for (let j = 0; j < this.cherries.length; ++j) {
+                    if (temp_x === this.cherries[j].x && temp_y === this.cherries[j].y) {
+                        pass = false;
+                        break;
+                    }
+                }
+            }
+            this.cherries.push(new Cherry(temp_x, temp_y, this.cherry_cell_color));
+        }
+    }
+    check_cherry() {
+        let remove_index = 0;
+        for (let i = 0; i < this.cherries.length - remove_index; ++i) {
+            if (this.snake.x === this.cherries[i].x && this.snake.y === this.cherries[i].y) {
+                this.snake.chew();
+                if (this.snake.tail_size !== this.snake.max_tail_size) {
+                    this.snake.tail_size += 1;
+                }
+                this.cherries.splice(i - remove_index, 1);
+                ++remove_index;
+            }
+        }
+    }
+    draw(ctx) {
+        ctx.strokeStyle = this.cell_color;
+        for (let i = 0; i < this.rows; ++i) {
+            for (let j = 0; j < this.cols; ++j) {
+                ctx.strokeRect(j * this.cell_size, i * cell_size, cell_size, cell_size);
+            }
+        }
+        this.snake.draw(ctx, this.cell_size);
+        for (let i = 0; i < this.cherries.length; ++i) {
+            this.cherries[i].draw(ctx, this.cell_size);
+        }
     }
 }
 
@@ -126,63 +209,18 @@ document.addEventListener('keydown', (event) => {
     }
 }, false);
 
-let snake = new Snake(grid_cols / 2, grid_rows / 2, max_tail_size);
+let snake = new Snake(snake_spawn_point[0], snake_spawn_point[1], max_tail_size, snake_cell_color, sound_chew);
+let field = new Game_Field(grid_rows, grid_cols, cell_size, cell_color, snake, max_cherry_num, cherry_cell_color);
+
 
 function update() {
-    ctx.fillStyle = 'rgb(0, 0, 0)';
+    ctx.fillStyle = background_color;
     ctx.fillRect(0, 0, window_width, window_height);
-    snake.draw(ctx, cell_size);
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
-    for (let i = 0; i < grid_rows; ++i) {
-        for (let j = 0; j < grid_cols; ++j) {
-            ctx.strokeRect(j * cell_size, i * cell_size, cell_size, cell_size);
-        }
-    }
-    for (let i = 0; i < cherries.length; ++i) {
-        cherries[i].draw(ctx, cell_size);
-    }
+    field.draw(ctx);
     if (index > game_delay) {
-        snake.move(grid_rows, grid_cols);
-        let remove_index = 0;
-        for (let i = 0; i < cherries.length - remove_index; ++i) {
-            if (snake.x === cherries[i].x && snake.y === cherries[i].y) {
-                sound_chew.play();
-                if (snake.tail_size !== max_tail_size) {
-                    snake.tail_size += 1;
-                }
-                cherries.splice(i - remove_index, 1);
-                ++remove_index;
-            }
-        }
-        for (let i = 0; i < max_cherry_num - cherries.length; ++i) {
-            if (cherries.length > grid_rows * grid_cols - snake.tail.length){
-                break;
-            }
-            let temp_x = 0;
-            let temp_y = 0;
-            let pass = false;
-            while (!pass) {
-                pass = true;
-                temp_x = gen_int(0, grid_cols);
-                temp_y = gen_int(0, grid_rows);
-                for (let j = 0; j < snake.tail.length; ++j) {
-                    if (temp_x === snake.tail[j][0] && temp_y === snake.tail[j][1]) {
-                        pass = false;
-                        break;
-                    }
-                }
-                if (!pass) {
-                    continue;
-                }
-                for (let j = 0; j < cherries.length; ++j) {
-                    if (temp_x === cherries[j].x && temp_y === cherries[j].y) {
-                        pass = false;
-                        break;
-                    }
-                }
-            }
-            cherries.push(new Cherry(temp_x, temp_y));
-        }
+        field.move_snake();
+        field.check_cherry();
+        field.spawn_cherry();
         index = 0;
     }
     ++index;
