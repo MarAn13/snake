@@ -14,10 +14,10 @@ ctx.scale(dpr, dpr);
 let cherries = [];
 const max_cherry_num = 1;
 let index = 0;
-const game_delay = 5;
+const game_delay = 3;
 const grid_rows = 20,
     grid_cols = 20;
-const max_tail_size = grid_rows * grid_cols + 1;    
+const max_tail_size = grid_rows * grid_cols + 1;
 const cell_height = window_height / grid_rows,
     cell_width = window_width / grid_cols;
 const cell_size = cell_height < cell_width ? cell_height : cell_width;
@@ -42,10 +42,6 @@ class Snake {
         this.tail_size = 1;
     }
     move(grid_rows, grid_cols) {
-        this.tail.push([this.x, this.y]);
-        if (this.tail.length === this.tail_size + 1) {
-            this.tail.shift();
-        }
         this.x += this.vx;
         this.y += this.vy;
         if (this.x >= grid_cols) {
@@ -60,10 +56,15 @@ class Snake {
         if (this.y < 0) {
             this.y = grid_rows - 1;
         }
-        for (let i = 0; i < this.tail.length; ++i) {
+        this.tail.push([this.x, this.y]);
+        if (this.tail.length === this.tail_size + 1) {
+            this.tail.shift();
+        }
+        for (let i = this.tail.length - 2; i > -1; --i) {
             if (this.x === this.tail[i][0] &&
                 this.y === this.tail[i][1]) {
                 this.#restart();
+                break;
             }
         }
     }
@@ -152,6 +153,9 @@ function update() {
             }
         }
         for (let i = 0; i < max_cherry_num - cherries.length; ++i) {
+            if (cherries.length > grid_rows * grid_cols - snake.tail.length){
+                break;
+            }
             let temp_x = 0;
             let temp_y = 0;
             let pass = false;
@@ -159,12 +163,19 @@ function update() {
                 pass = true;
                 temp_x = gen_int(0, grid_cols);
                 temp_y = gen_int(0, grid_rows);
-                if (temp_x === snake.x && temp_y === snake.y) {
-                    pass = false;
+                for (let j = 0; j < snake.tail.length; ++j) {
+                    if (temp_x === snake.tail[j][0] && temp_y === snake.tail[j][1]) {
+                        pass = false;
+                        break;
+                    }
+                }
+                if (!pass) {
+                    continue;
                 }
                 for (let j = 0; j < cherries.length; ++j) {
-                    if (temp_x === cherries[j][0] && temp_y === cherries[j][1]) {
+                    if (temp_x === cherries[j].x && temp_y === cherries[j].y) {
                         pass = false;
+                        break;
                     }
                 }
             }
