@@ -11,6 +11,7 @@ const window_width = window.innerWidth;
 const window_height = window.innerHeight;
 const ctx = canvas.getContext('2d');
 ctx.scale(dpr, dpr);
+const sound_chew = new Audio("chew.wav");
 let cherries = [];
 const max_cherry_num = 1;
 let index = 0;
@@ -145,6 +146,7 @@ function update() {
         let remove_index = 0;
         for (let i = 0; i < cherries.length - remove_index; ++i) {
             if (snake.x === cherries[i].x && snake.y === cherries[i].y) {
+                sound_chew.play();
                 if (snake.tail_size !== max_tail_size) {
                     snake.tail_size += 1;
                 }
