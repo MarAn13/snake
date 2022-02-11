@@ -11,12 +11,12 @@ const window_width = window.innerWidth;
 const window_height = window.innerHeight;
 const ctx = canvas.getContext('2d');
 ctx.scale(dpr, dpr);
+///////////// consts
 const sound_chew = new Audio("chew.wav");
 const background_color = 'rgb(0, 0, 0)';
 const snake_cell_color = 'rgb(0, 255, 0)';
 const cherry_cell_color = 'rgb(255, 0, 0)';
 const max_cherry_num = 1;
-let index = 0;
 const game_delay = 3;
 const grid_rows = 20,
     grid_cols = 20;
@@ -26,6 +26,8 @@ const cell_height = window_height / grid_rows,
 const cell_size = cell_height < cell_width ? cell_height : cell_width;
 const cell_color = 'rgba(255, 255, 255, 0.1)';
 const snake_spawn_point = [grid_cols / 2, grid_rows / 2];
+//////////////////////////////////////////////////////////
+let index = 0;
 
 function gen_int(min, max) {
     min = Math.ceil(min);
