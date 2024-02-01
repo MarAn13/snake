@@ -16,4 +16,6 @@ html, body{
 
 canvas{
     display: none;
+    width: 60%;
+    height: 60%;
 }

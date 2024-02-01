@@ -15,14 +15,14 @@ const cherry_max_n = 1;
 const n_cols = 20,
   n_rows = 20;
 // potential max tail size in respect to grid dimensions
-const global_snake_tail_max_size = n_rows * n_cols;
+const global_snake_tail_max_size = n_cols * n_rows;
 const cell_size = {
   width: canvas.width / n_cols,
   height: canvas.height / n_rows,
 };
 const snake_spawn_point = {
-  x: n_cols / 2,
-  y: n_rows / 2,
+  x: Math.floor(n_cols / 2),
+  y: Math.floor(n_rows / 2),
 };
 
 function gen_int(min, max) {
@@ -140,15 +140,11 @@ class Game_Field {
     this.snake.draw(ctx);
   }
   spawn_cherry() {
-    for (let i = 0; i < cherry_max_n - this.cherries.size; ++i) {
-      //check if any space left to spawn a new cherry
-      if (
-        this.rows * this.cols - this.cherries.size - this.snake.tail.length <=
-        0
-      ) {
-        break;
-      }
-
+    //check if any space left to spawn a new cherry -> spawn cherry
+    if (
+      this.cherries.size < cherry_max_n &&
+      this.rows * this.cols - this.cherries.size - this.snake.tail.length - 1 > 0
+    ) {
       let x = gen_int(0, this.cols);
       let y = gen_int(0, this.rows);
       while (
@@ -193,8 +189,8 @@ class Game_Field {
   }
   // game loop update
   update() {
-    if (this.snake.tail_size === global_snake_tail_max_size) {
-      end_game();
+    if (this.snake.tail_max_size + 1 === global_snake_tail_max_size) {
+      this.end_game();
       return;
     }
     this.check_snake();
@@ -262,8 +258,9 @@ function update() {
 function start_canvas() {
   button_play.style.display = "none";
   canvas.style.display = "inline";
+  // debug
   //setInterval(debug_info, 1000);
-  setInterval(check_window_activity, 250);
+  setInterval(check_window_activity, 100);
 }
 
 async function check_window_activity() {
