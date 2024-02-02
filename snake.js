@@ -229,6 +229,7 @@ document.addEventListener(
 
 // main game update loop
 function update() {
+  window.requestAnimationFrame(update);
   if (field.status === Game.END) field.reset();
 
   time_now = window.performance.now();
@@ -249,28 +250,23 @@ function update() {
 
   const time_excess = time_dur % time_per_frame;
   time_prev = time_now - time_excess;
-
   ++frames;
-
-  window.requestAnimationFrame(update);
 }
 
 function start_canvas() {
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) requestAnimationFrame(update);
+  });
   button_play.style.display = "none";
   canvas.style.display = "inline";
+  requestAnimationFrame(update);
   // debug
   //setInterval(debug_info, 1000);
-  setInterval(check_window_activity, 100);
-}
-
-async function check_window_activity() {
-  if (window.performance.now() - time_prev > time_per_frame * 2)
-    requestAnimationFrame(update);
 }
 
 async function debug_info() {
   console.log(
-    `[DEBUG]:\n\tLOOP:\n\t\tFPS: ${frames}\n\tFIELD:\n\t\tN_COLS: ${n_cols}\n\t\tN_ROWS: ${n_rows}\n\t\tCELL_SIZE: ${cell_size.width} ${cell_size.height}\n\t\tCHERRY_MAX_N: ${cherry_max_n}\n\t\tSTATUS: ${field.status}\n\tSNAKE:\n\t\tSNAKE_POS: ${field.snake.x} ${field.snake.y}\n\t\tSNAKE_SPEED: ${field.snake.speed_x} ${field.snake.speed_y}\n\t\tSNAKE_TAIL_SIZE: ${field.snake.tail.length}`
+    `[DEBUG]:\n\tLOOP:\n\t\tFPS: ${frames}\n\t\tUPDATE_TIMER: ${count}\n\tFIELD:\n\t\tN_COLS: ${n_cols}\n\t\tN_ROWS: ${n_rows}\n\t\tCELL_SIZE: ${cell_size.width} ${cell_size.height}\n\t\tCHERRY_MAX_N: ${cherry_max_n}\n\t\tSTATUS: ${field.status}\n\tSNAKE:\n\t\tSNAKE_POS: ${field.snake.x} ${field.snake.y}\n\t\tSNAKE_SPEED: ${field.snake.speed_x} ${field.snake.speed_y}\n\t\tSNAKE_TAIL_SIZE: ${field.snake.tail.length}`
   );
   frames = 0;
 }
