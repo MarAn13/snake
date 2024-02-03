@@ -8,7 +8,8 @@ button_play.addEventListener("click", start_canvas, false);
 const snake_chew_sound = new Audio("chew.wav");
 snake_chew_sound.preload = "auto";
 const background_color = "rgba(0, 0, 0, 1)";
-const snake_cell_color = "rgba(0, 255, 0, 1)";
+const snake_head_color = "rgba(0, 200, 0, 1)";
+const snake_tail_color = "rgba(0, 255, 0, 1)";
 const cherry_cell_color = "rgba(255, 0, 0, 1)";
 const cell_color = "rgba(255, 255, 255, 0.75)";
 const cherry_max_n = 1;
@@ -50,7 +51,7 @@ class Cherry {
 }
 
 class Snake {
-  constructor(x, y, fill_color) {
+  constructor(x, y, head_color, tail_color) {
     this.x = x;
     this.y = y;
     this.speed_x = 1;
@@ -60,11 +61,12 @@ class Snake {
     //
     this.tail_map = new Map();
     this.tail_max_size = 1;
-    this.fill_color = fill_color;
+    this.head_color = head_color;
+    this.tail_color = tail_color;
     this.sound = snake_chew_sound;
   }
   draw(ctx) {
-    ctx.fillStyle = this.fill_color;
+    ctx.fillStyle = this.tail_color;
     for (let i = 0; i < this.tail.length; ++i) {
       ctx.fillRect(
         this.tail[i].x * cell_size.width,
@@ -73,6 +75,7 @@ class Snake {
         cell_size.height
       );
     }
+    ctx.fillStyle = this.head_color;
     ctx.fillRect(
       this.x * cell_size.width,
       this.y * cell_size.height,
@@ -277,13 +280,14 @@ async function debug_info() {
 let snake = new Snake(
   snake_spawn_point.x,
   snake_spawn_point.y,
-  snake_cell_color
+  snake_head_color,
+  snake_tail_color
 );
 let field = new Game_Field(snake, n_rows, n_cols, cell_color);
 
 // game update loop vars init
 let count = 0;
-const game_update_limit = 3;
+const game_update_limit = 5;
 const fps = 60;
 const time_per_frame = 1000 / fps;
 let time_prev = window.performance.now();
